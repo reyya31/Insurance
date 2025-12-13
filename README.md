@@ -8,11 +8,6 @@ This project builds a healthcare insurance schema in SQLite, seeds sample data, 
 - **`requirements.txt`**: Python dependencies (`pandas`, `sqlalchemy`, `psycopg2-binary`, `ipython-sql`)
 - **`myenv/`**: Virtual environment (optional)
 
-<<<<<<< Updated upstream
-
-
-=======
->>>>>>> Stashed changes
 **How It Works (Detailed)**
 
 1. **Schema Creation**
@@ -36,11 +31,7 @@ This project builds a healthcare insurance schema in SQLite, seeds sample data, 
    - **Why:** Validates schema and provides pre-migration baseline for comparison.
 
 5. **Migration to PostgreSQL**
-<<<<<<< Updated upstream
-   - **Action:** 
-=======
    - **Action:**
->>>>>>> Stashed changes
      - Use `sqlalchemy.inspect()` to enumerate SQLite tables.
      - Read each table: `pd.read_sql_table(table_name, sqlite_engine)` → DataFrame.
      - Write to Postgres: `df.to_sql(table_name, pg_engine, if_exists='replace')`.
@@ -82,11 +73,7 @@ Open `sql.ipynb`, then run cells in order.
 - `SELECT * FROM plans;` — Show all available plans (helps members choose).
 - `SELECT plan_name, monthly_premium FROM plans ORDER BY monthly_premium;` — Compare costs.
 
-<<<<<<< Updated upstream
-**Insights:** 
-=======
 **Insights:**
->>>>>>> Stashed changes
 - Which plans are most affordable (Bronze tier = lowest premium).
 - Premium differences between insurers (UnitedHealthcare Gold vs. Anthem Bronze).
 
@@ -241,7 +228,7 @@ PROVIDERS ← (used in) ← CLAIMS
 
 ---
 
-## Key SQL Queries & Purpose
+
 
 ## Key SQL Queries & Purpose
 
@@ -281,6 +268,35 @@ PROVIDERS ← (used in) ← CLAIMS
 - `idx_enrollments_dates`: `enrollments(start_date, end_date)` — composite index for "coverage between dates?"
 - `idx_providers_network`: `providers(in_network)` — fast filter "show in-network doctors."
 - `idx_claim_lines_claim`: `claim_lines(claim_id)` — fast "show all lines on a claim."
+
+---
+
+### Schema validation
+- Purpose: verify the source schema (tables, columns, types, nullability, PKs) matches expectations before migrating data.
+- How: use `sqlalchemy.inspect()` or `PRAGMA table_info(table)` (SQLite) to fetch column metadata and run assertions against an expected schema spec (dictionary of required columns and types). Fail early if critical mismatches are found.
+- Result: prevents silent type coercion, missing columns, or truncated data during migration.
+
+### `compare_schemas`
+- Purpose: produce a side-by-side diff between SQLite and Postgres schemas.
+- How: fetch column metadata for each table from both DBs, compare column names, types, nullability, and primary keys; output a human-readable report (console, Markdown, or JSON) listing missing tables/columns and type mismatches.
+- Result: actionable report to fix schema drift before data copy.
+
+### Migration logging system
+- Purpose: capture per-table migration telemetry for auditing and retries.
+- Minimal log fields: `table`, `start_time`, `end_time`, `duration_seconds`, `rows_read`, `rows_written`, `status` (success/error), `error_message`, `checksum` (optional).
+- How: use Python `logging` (structured JSON logs) and/or write a run summary file `migration_logs/<timestamp>_migration.json` with one record per table. Log start before reading, record stats after write, and include errors and stacktraces on failure.
+- Best practice: read in chunks, compute checksums (MD5 or Polars hash) on key columns, and persist logs to allow resume and verification.
+
+### Polars (performance & validation)
+- Purpose: use `polars` for faster in-memory transformations, group-bys, and checksums on medium-to-large tables prior to load.
+- How: read source table into pandas or CSV, convert to Polars (`pl.from_pandas(df)`), perform aggregations/validations, then write out a CSV and load into Postgres with `COPY` for high-throughput ingestion.
+- Example snippet:
+   - `import polars as pl`
+   - `df = pd.read_sql_table('claims', sqlite_engine)`
+   - `pl_df = pl.from_pandas(df)`
+   - `checksum = pl_df.select(pl.md5_horizontal(pl.col(pl_df.columns))).to_numpy()` (or group/agg as needed)
+   - `pl_df.write_csv('tmp/claims_chunk.csv')` → use `COPY` in Postgres for fast load.
+- Why: Polars uses Arrow memory layout and multi-threading, significantly speeding up validation and pre-load transforms.
 
 ---
 
