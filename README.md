@@ -8,8 +8,11 @@ This project builds a healthcare insurance schema in SQLite, seeds sample data, 
 - **`requirements.txt`**: Python dependencies (`pandas`, `sqlalchemy`, `psycopg2-binary`, `ipython-sql`)
 - **`myenv/`**: Virtual environment (optional)
 
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
 **How It Works (Detailed)**
 
 1. **Schema Creation**
@@ -33,7 +36,11 @@ This project builds a healthcare insurance schema in SQLite, seeds sample data, 
    - **Why:** Validates schema and provides pre-migration baseline for comparison.
 
 5. **Migration to PostgreSQL**
+<<<<<<< Updated upstream
    - **Action:** 
+=======
+   - **Action:**
+>>>>>>> Stashed changes
      - Use `sqlalchemy.inspect()` to enumerate SQLite tables.
      - Read each table: `pd.read_sql_table(table_name, sqlite_engine)` → DataFrame.
      - Write to Postgres: `df.to_sql(table_name, pg_engine, if_exists='replace')`.
@@ -75,7 +82,11 @@ Open `sql.ipynb`, then run cells in order.
 - `SELECT * FROM plans;` — Show all available plans (helps members choose).
 - `SELECT plan_name, monthly_premium FROM plans ORDER BY monthly_premium;` — Compare costs.
 
+<<<<<<< Updated upstream
 **Insights:** 
+=======
+**Insights:**
+>>>>>>> Stashed changes
 - Which plans are most affordable (Bronze tier = lowest premium).
 - Premium differences between insurers (UnitedHealthcare Gold vs. Anthem Bronze).
 
